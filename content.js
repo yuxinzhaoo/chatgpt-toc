@@ -12,7 +12,9 @@ function createTOCPanel() {
   panel.innerHTML = `<h3 style="margin-top: 0;">问答目录</h3><ul></ul>`;
   panel.style.position = "fixed";
   panel.style.top = "100px";
-  panel.style.right = "20px";
+  panel.style.left = "auto";
+  panel.style.right = "20px"; // 初始位置
+
   panel.style.width = "280px";
   panel.style.background = "white";
   panel.style.border = "1px solid #ccc";
@@ -27,13 +29,41 @@ function createTOCPanel() {
 
   console.log("✅ TOC 面板已插入");
   updateTOC(); // 插入时刷新一次内容
+
+  const header = panel.querySelector("h3");
+  header.style.cursor = "move";
+
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  header.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    offsetX = e.clientX - panel.offsetLeft;
+    offsetY = e.clientY - panel.offsetTop;
+    panel.style.right = "auto"; // ✅ 清除 right，避免拖动冲突
+    document.body.style.userSelect = "none";
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (isDragging) {
+      panel.style.left = `${e.clientX - offsetX}px`;
+      panel.style.top = `${e.clientY - offsetY}px`;
+    }
+  });
+
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+    document.body.style.userSelect = "auto";
+  });
 }
 
 function updateTOC() {
   if (!panel) return;
 
-  panel.innerHTML = `<h3 style="margin-top: 0;">问答目录</h3><ul style="padding-left: 16px;"></ul>`;
   const ul = panel.querySelector("ul");
+  if (!ul) return;
+
+  ul.innerHTML = ""; // 清空原有列表
 
   let index = 1;
   questions.forEach((node, text) => {
