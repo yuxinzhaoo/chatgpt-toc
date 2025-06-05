@@ -126,4 +126,17 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
+
+  // 刷新聊天记录
+  let lastPath = location.pathname;
+
+  setInterval(() => {
+    if (location.pathname !== lastPath) {
+      console.log("🔄 检测到聊天记录切换，刷新 TOC...");
+      lastPath = location.pathname;
+
+      questions.clear(); // 清除旧的问题
+      updateTOC(); // 清空目录
+    }
+  }, 1000);
 }
