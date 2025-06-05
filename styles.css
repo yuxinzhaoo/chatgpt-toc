@@ -1,0 +1,35 @@
+#chatgpt-toc-panel {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  font-family: sans-serif;
+  z-index: 9999;
+  border-radius: 8px;
+}
+#chatgpt-toc-panel h3 {
+  margin-top: 0;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+#chatgpt-toc-panel ul {
+  list-style: none;
+  padding-left: 0;
+}
+#chatgpt-toc-panel li {
+  margin-bottom: 6px;
+}
+#chatgpt-toc-panel a {
+  text-decoration: none;
+  color: #1a73e8;
+  font-size: 14px;
+}
+#chatgpt-toc-panel a:hover {
+  text-decoration: underline;
+}
