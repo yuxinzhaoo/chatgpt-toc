@@ -46,12 +46,12 @@ function createTOCPanel() {
       <div style="width: 12px;"></div>
     </div>
     <ul id="toc-list" style="
+      flex: 1;
       margin: 0;
       padding: 8px 0;
       height: 100%;
       overflow-y: auto;
-      transition: max-height 0.3s ease, opacity 0.3s ease;
-      opacity: 1;
+      transition: opacity 0.3s ease;
     "></ul>
     <div class="resize-handle resize-top"></div>
     <div class="resize-handle resize-right"></div>
@@ -76,7 +76,10 @@ function createTOCPanel() {
     borderRadius: "12px",
     fontSize: "14px",
     fontFamily: "'Segoe UI', sans-serif",
-    overflow: "hidden",
+    display: "flex",                 // ✅ 让 panel 成为弹性容器
+    flexDirection: "column",        // ✅ 垂直排列
+    overflow: "hidden",             // ✅ 只让 panel 自己不滚动，内部可滚
+    height: `${Math.floor(window.innerHeight * 0.6)}px`, // ✅ 初始高度
   });
 
   document.body.appendChild(panel);
@@ -150,7 +153,7 @@ function createTOCPanel() {
     const ul = panel.querySelector("#toc-list");
     if (isMinimized) {
       ul.style.display = "block";
-      panel.style.height = panel.dataset.originalHeight || "400px"; // 可自定义默认高度
+      panel.style.height = panel.dataset.originalHeight || "100px"; // 可自定义默认高度
       toggleBtn.style.background = "#ffbd2e";
     } else {
       panel.dataset.originalHeight = panel.offsetHeight + "px"; // 保存当前高度用于还原
@@ -174,6 +177,7 @@ function createTOCPanel() {
   ].forEach((dir) => {
     const handle = panel.querySelector(`.resize-${dir}`);
     if (!handle) return;
+  
     handle.addEventListener("mousedown", (e) => {
       e.preventDefault();
       const startX = e.clientX;
@@ -182,46 +186,70 @@ function createTOCPanel() {
       const startHeight = panel.offsetHeight;
       const startTop = panel.offsetTop;
       const startLeft = panel.offsetLeft;
+  
+      const minWidth = 200;
+      const minHeight = 150;
+  
       function onMove(e) {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-
-        const minWidth = 200;
-        const minHeight = 150;
-
+  
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+        let newTop = startTop;
+        let newLeft = startLeft;
+  
         if (dir.includes("right")) {
-          panel.style.width = `${Math.max(minWidth, startWidth + dx)}px`;
+          newWidth = Math.max(minWidth, startWidth + dx);
+          if (newLeft + newWidth > window.innerWidth) {
+            newWidth = window.innerWidth - newLeft;
+          }
+          panel.style.width = `${newWidth}px`;
         }
-
+  
         if (dir.includes("bottom")) {
-          panel.style.height = `${Math.max(minHeight, startHeight + dy)}px`;
+          newHeight = Math.max(minHeight, startHeight + dy);
+          if (newTop + newHeight > window.innerHeight) {
+            newHeight = window.innerHeight - newTop;
+          }
+          panel.style.height = `${newHeight}px`;
         }
-
+  
         if (dir.includes("left")) {
-          const newWidth = Math.max(minWidth, startWidth - dx);
-          const newLeft = startLeft + (startWidth - newWidth);
+          newWidth = Math.max(minWidth, startWidth - dx);
+          newLeft = startLeft + (startWidth - newWidth);
+          if (newLeft < 0) {
+            newLeft = 0;
+            newWidth = startLeft + startWidth;
+          }
           panel.style.width = `${newWidth}px`;
           panel.style.left = `${newLeft}px`;
         }
-
+  
         if (dir.includes("top")) {
-          const newHeight = Math.max(minHeight, startHeight - dy);
-          const newTop = startTop + (startHeight - newHeight);
+          newHeight = Math.max(minHeight, startHeight - dy);
+          newTop = startTop + (startHeight - newHeight);
+          if (newTop < 0) {
+            newTop = 0;
+            newHeight = startTop + startHeight;
+          }
           panel.style.height = `${newHeight}px`;
           panel.style.top = `${newTop}px`;
         }
       }
-
+  
       function onUp() {
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
         document.body.style.userSelect = "auto";
       }
+  
       document.body.style.userSelect = "none";
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     });
   });
+  
 }
 
 function updateTOC() {
