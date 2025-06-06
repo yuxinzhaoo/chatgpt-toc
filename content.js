@@ -2,9 +2,10 @@
 // @name         ChatGPT TOC Panel with Full Resize
 // @description 右侧问答目录面板，支持拖动 + 八方向缩放 + 动画展开收起
 // ==/UserScript==
-
 let panel;
 const questions = new Map();
+let observer = null;
+let intervalId = null;
 
 function createTOCPanel() {
   if (document.getElementById("chatgpt-toc-panel")) return;
@@ -172,18 +173,33 @@ function createTOCPanel() {
       function onMove(e) {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        if (dir.includes("right")) panel.style.width = `${startWidth + dx}px`;
-        if (dir.includes("bottom"))
-          panel.style.height = `${startHeight + dy}px`;
-        if (dir.includes("left")) {
-          panel.style.width = `${startWidth - dx}px`;
-          panel.style.left = `${startLeft + dx}px`;
+
+        const minWidth = 200;
+        const minHeight = 150;
+
+        if (dir.includes("right")) {
+          panel.style.width = `${Math.max(minWidth, startWidth + dx)}px`;
         }
+
+        if (dir.includes("bottom")) {
+          panel.style.height = `${Math.max(minHeight, startHeight + dy)}px`;
+        }
+
+        if (dir.includes("left")) {
+          const newWidth = Math.max(minWidth, startWidth - dx);
+          const newLeft = startLeft + (startWidth - newWidth);
+          panel.style.width = `${newWidth}px`;
+          panel.style.left = `${newLeft}px`;
+        }
+
         if (dir.includes("top")) {
-          panel.style.height = `${startHeight - dy}px`;
-          panel.style.top = `${startTop + dy}px`;
+          const newHeight = Math.max(minHeight, startHeight - dy);
+          const newTop = startTop + (startHeight - newHeight);
+          panel.style.height = `${newHeight}px`;
+          panel.style.top = `${newTop}px`;
         }
       }
+
       function onUp() {
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
@@ -286,6 +302,13 @@ function init() {
   setInterval(() => {
     if (!document.getElementById("chatgpt-toc-panel")) createTOCPanel();
   }, 1000);
+}
+
+function cleanup() {
+  observer?.disconnect();
+  observer = null;
+  clearInterval(intervalId);
+  intervalId = null;
 }
 
 if (document.readyState === "loading") {
