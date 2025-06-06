@@ -76,11 +76,14 @@ function createTOCPanel() {
     borderRadius: "12px",
     fontSize: "14px",
     fontFamily: "'Segoe UI', sans-serif",
-    display: "flex",                 // ✅ 让 panel 成为弹性容器
-    flexDirection: "column",        // ✅ 垂直排列
-    overflow: "hidden",             // ✅ 只让 panel 自己不滚动，内部可滚
-    height: `${Math.floor(window.innerHeight * 0.6)}px`, // ✅ 初始高度
+    display: "block",                     // ✅ 替换 flex 为 block
+    overflow: "hidden",                 
+    height: "70vh",                   // ✅ 你想要的高度
+    minHeight: "150px",                // ✅ 防止被压缩
+    maxHeight: "95vh",                   // ✅ 解除限制
+    flexShrink: "0",                     // ✅ 加这一行防止被父 flex 压缩（多余但保险）
   });
+  
 
   document.body.appendChild(panel);
   updateTOC();
