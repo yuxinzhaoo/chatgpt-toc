@@ -111,6 +111,22 @@ function createTOCPanel() {
     offsetY = e.clientY - panel.offsetTop;
     document.body.style.userSelect = "none";
   });
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+    document.body.style.userSelect = "auto";
+  });
+  
+  // ✅ 防止拖动出现提示框
+  dragbar.addEventListener("dragstart", (e) => e.preventDefault());
+  dragbar.setAttribute("draggable", "false");
+  
+  // ✅ 禁止选择文本（彻底）
+  dragbar.addEventListener("selectstart", (e) => e.preventDefault());
+  dragbar.style.userSelect = "none";
+  panel.querySelectorAll("#chatgpt-toc-dragbar *").forEach(el => {
+    el.style.userSelect = "none";
+    el.setAttribute("draggable", "false");
+  });
   document.addEventListener("mousemove", (e) => {
     if (!isDragging) return;
 
@@ -125,11 +141,6 @@ function createTOCPanel() {
 
     panel.style.left = `${Math.min(Math.max(newLeft, minX), maxX)}px`;
     panel.style.top = `${Math.min(Math.max(newTop, minY), maxY)}px`;
-  });
-
-  document.addEventListener("mouseup", () => {
-    isDragging = false;
-    document.body.style.userSelect = "auto";
   });
 
   // 展开/收起
@@ -240,6 +251,8 @@ function updateTOC() {
     const a = document.createElement("a");
     a.href = "#";
     a.textContent = `${index++}. ${text.slice(0, 50)}`;
+    a.setAttribute("draggable", "false"); // ✅ 禁止链接拖拽
+    a.addEventListener("dragstart", (e) => e.preventDefault()); // ✅ 防止拖拽提示框
     Object.assign(a.style, {
       display: "block",
       padding: "6px 10px",
@@ -264,13 +277,6 @@ function updateTOC() {
   });
 }
 
-<<<<<<< HEAD
-function setupMutationObserver() {
-  const observer = new MutationObserver(() => {
-    const chatItems = document.querySelectorAll(".text-base:not([data-toc])");
-    chatItems.forEach((el) => {
-      const text = el.innerText;
-=======
 // ✅ 正确设置全局 observer
 function setupMutationObserver() {
   observer?.disconnect(); // 防止重复监听
@@ -278,7 +284,6 @@ function setupMutationObserver() {
     const chatItems = document.querySelectorAll(".text-base:not([data-toc])");
     chatItems.forEach((el) => {
       const text = el.innerText.trim();
->>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
       const parent = el.closest('[data-testid*="conversation-turn"]');
       if (
         parent?.querySelector(".whitespace-pre-wrap") &&
@@ -292,28 +297,11 @@ function setupMutationObserver() {
       }
     });
   });
-<<<<<<< HEAD
-=======
-
->>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function monitorChatSwitch() {
   let lastPath = location.pathname;
-<<<<<<< HEAD
-  intervalId = setInterval(() => {
-    if (location.pathname !== lastPath) {
-      lastPath = location.pathname;
-      cleanup(); // 自动清理旧数据和观察器
-      questions.clear();
-      updateTOC();
-      setupMutationObserver(); // 重新设置观察器
-    }
-  }, 1000);
-}
-
-=======
 
   function startMonitor() {
     intervalId = setInterval(() => {
@@ -344,7 +332,6 @@ function cleanup() {
 }
 
 // ✅ 初始化入口
->>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
 function init() {
   createTOCPanel();
   setupMutationObserver();
@@ -355,14 +342,6 @@ function init() {
   }, 1000);
 }
 
-<<<<<<< HEAD
-// ✅ 这里插入 cleanup 函数
-function cleanup() {
-  observer?.disconnect();
-  clearInterval(intervalId);
-}
-=======
->>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
