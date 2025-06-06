@@ -112,9 +112,20 @@ function createTOCPanel() {
   });
   document.addEventListener("mousemove", (e) => {
     if (!isDragging) return;
-    panel.style.left = `${e.clientX - offsetX}px`;
-    panel.style.top = `${e.clientY - offsetY}px`;
+
+    const newLeft = e.clientX - offsetX;
+    const newTop = e.clientY - offsetY;
+
+    // 限制边界（避免移出窗口）
+    const minX = 0;
+    const minY = 0;
+    const maxX = window.innerWidth - panel.offsetWidth;
+    const maxY = window.innerHeight - panel.offsetHeight;
+
+    panel.style.left = `${Math.min(Math.max(newLeft, minX), maxX)}px`;
+    panel.style.top = `${Math.min(Math.max(newTop, minY), maxY)}px`;
   });
+
   document.addEventListener("mouseup", () => {
     isDragging = false;
     document.body.style.userSelect = "auto";
