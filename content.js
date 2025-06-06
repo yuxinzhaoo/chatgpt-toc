@@ -264,11 +264,21 @@ function updateTOC() {
   });
 }
 
+<<<<<<< HEAD
 function setupMutationObserver() {
   const observer = new MutationObserver(() => {
     const chatItems = document.querySelectorAll(".text-base:not([data-toc])");
     chatItems.forEach((el) => {
       const text = el.innerText;
+=======
+// ✅ 正确设置全局 observer
+function setupMutationObserver() {
+  observer?.disconnect(); // 防止重复监听
+  observer = new MutationObserver(() => {
+    const chatItems = document.querySelectorAll(".text-base:not([data-toc])");
+    chatItems.forEach((el) => {
+      const text = el.innerText.trim();
+>>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
       const parent = el.closest('[data-testid*="conversation-turn"]');
       if (
         parent?.querySelector(".whitespace-pre-wrap") &&
@@ -282,11 +292,16 @@ function setupMutationObserver() {
       }
     });
   });
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function monitorChatSwitch() {
   let lastPath = location.pathname;
+<<<<<<< HEAD
   intervalId = setInterval(() => {
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
@@ -298,6 +313,38 @@ function monitorChatSwitch() {
   }, 1000);
 }
 
+=======
+
+  function startMonitor() {
+    intervalId = setInterval(() => {
+      if (location.pathname !== lastPath) {
+        clearInterval(intervalId); // 先清掉当前这个 interval，避免重复
+        lastPath = location.pathname;
+        cleanup();
+        setTimeout(() => {
+          setupMutationObserver();
+          startMonitor(); // ✅ 重新启动监听
+        }, 300);
+      }
+    }, 1000);
+  }
+
+  startMonitor(); // 初次调用
+}
+
+function cleanup() {
+  observer?.disconnect();
+  observer = null;
+  clearInterval(intervalId);
+  questions.clear();
+  document.querySelectorAll("[data-toc]").forEach(el => {
+    el.removeAttribute("data-toc");
+  });
+  updateTOC();
+}
+
+// ✅ 初始化入口
+>>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
 function init() {
   createTOCPanel();
   setupMutationObserver();
@@ -308,11 +355,14 @@ function init() {
   }, 1000);
 }
 
+<<<<<<< HEAD
 // ✅ 这里插入 cleanup 函数
 function cleanup() {
   observer?.disconnect();
   clearInterval(intervalId);
 }
+=======
+>>>>>>> 1b7a2cf (fixed(toc-list error when chat switch))
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
