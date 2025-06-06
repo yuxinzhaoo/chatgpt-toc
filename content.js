@@ -76,14 +76,13 @@ function createTOCPanel() {
     borderRadius: "12px",
     fontSize: "14px",
     fontFamily: "'Segoe UI', sans-serif",
-    display: "block",                     // ✅ 替换 flex 为 block
-    overflow: "hidden",                 
-    height: "70vh",                   // ✅ 你想要的高度
-    minHeight: "150px",                // ✅ 防止被压缩
-    maxHeight: "95vh",                   // ✅ 解除限制
-    flexShrink: "0",                     // ✅ 加这一行防止被父 flex 压缩（多余但保险）
+    display: "block", // ✅ 替换 flex 为 block
+    overflow: "hidden",
+    height: "70vh", // ✅ 你想要的高度
+    minHeight: "150px", // ✅ 防止被压缩
+    maxHeight: "95vh", // ✅ 解除限制
+    flexShrink: "0", // ✅ 加这一行防止被父 flex 压缩（多余但保险）
   });
-  
 
   document.body.appendChild(panel);
   updateTOC();
@@ -121,15 +120,15 @@ function createTOCPanel() {
     isDragging = false;
     document.body.style.userSelect = "auto";
   });
-  
+
   // ✅ 防止拖动出现提示框
   dragbar.addEventListener("dragstart", (e) => e.preventDefault());
   dragbar.setAttribute("draggable", "false");
-  
+
   // ✅ 禁止选择文本（彻底）
   dragbar.addEventListener("selectstart", (e) => e.preventDefault());
   dragbar.style.userSelect = "none";
-  panel.querySelectorAll("#chatgpt-toc-dragbar *").forEach(el => {
+  panel.querySelectorAll("#chatgpt-toc-dragbar *").forEach((el) => {
     el.style.userSelect = "none";
     el.setAttribute("draggable", "false");
   });
@@ -180,7 +179,7 @@ function createTOCPanel() {
   ].forEach((dir) => {
     const handle = panel.querySelector(`.resize-${dir}`);
     if (!handle) return;
-  
+
     handle.addEventListener("mousedown", (e) => {
       e.preventDefault();
       const startX = e.clientX;
@@ -189,19 +188,19 @@ function createTOCPanel() {
       const startHeight = panel.offsetHeight;
       const startTop = panel.offsetTop;
       const startLeft = panel.offsetLeft;
-  
+
       const minWidth = 200;
       const minHeight = 150;
-  
+
       function onMove(e) {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-  
+
         let newWidth = startWidth;
         let newHeight = startHeight;
         let newTop = startTop;
         let newLeft = startLeft;
-  
+
         if (dir.includes("right")) {
           newWidth = Math.max(minWidth, startWidth + dx);
           if (newLeft + newWidth > window.innerWidth) {
@@ -209,7 +208,7 @@ function createTOCPanel() {
           }
           panel.style.width = `${newWidth}px`;
         }
-  
+
         if (dir.includes("bottom")) {
           newHeight = Math.max(minHeight, startHeight + dy);
           if (newTop + newHeight > window.innerHeight) {
@@ -217,7 +216,7 @@ function createTOCPanel() {
           }
           panel.style.height = `${newHeight}px`;
         }
-  
+
         if (dir.includes("left")) {
           newWidth = Math.max(minWidth, startWidth - dx);
           newLeft = startLeft + (startWidth - newWidth);
@@ -228,7 +227,7 @@ function createTOCPanel() {
           panel.style.width = `${newWidth}px`;
           panel.style.left = `${newLeft}px`;
         }
-  
+
         if (dir.includes("top")) {
           newHeight = Math.max(minHeight, startHeight - dy);
           newTop = startTop + (startHeight - newHeight);
@@ -240,19 +239,18 @@ function createTOCPanel() {
           panel.style.top = `${newTop}px`;
         }
       }
-  
+
       function onUp() {
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
         document.body.style.userSelect = "auto";
       }
-  
+
       document.body.style.userSelect = "none";
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     });
   });
-  
 }
 
 function updateTOC() {
@@ -356,7 +354,7 @@ function cleanup() {
   observer = null;
   clearInterval(intervalId);
   questions.clear();
-  document.querySelectorAll("[data-toc]").forEach(el => {
+  document.querySelectorAll("[data-toc]").forEach((el) => {
     el.removeAttribute("data-toc");
   });
   updateTOC();
@@ -372,7 +370,6 @@ function init() {
     if (!document.getElementById("chatgpt-toc-panel")) createTOCPanel();
   }, 1000);
 }
-
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
