@@ -4,8 +4,8 @@
 // ==/UserScript==
 let panel;
 const questions = new Map();
-let observer = null;
-let intervalId = null;
+let observer;
+let intervalId;
 
 function createTOCPanel() {
   if (document.getElementById("chatgpt-toc-panel")) return;
@@ -286,11 +286,13 @@ function setupMutationObserver() {
 
 function monitorChatSwitch() {
   let lastPath = location.pathname;
-  setInterval(() => {
+  intervalId = setInterval(() => {
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
+      cleanup(); // 自动清理旧数据和观察器
       questions.clear();
       updateTOC();
+      setupMutationObserver(); // 重新设置观察器
     }
   }, 1000);
 }
@@ -299,16 +301,16 @@ function init() {
   createTOCPanel();
   setupMutationObserver();
   monitorChatSwitch();
+  window.addEventListener("beforeunload", cleanup);
   setInterval(() => {
     if (!document.getElementById("chatgpt-toc-panel")) createTOCPanel();
   }, 1000);
 }
 
+// ✅ 这里插入 cleanup 函数
 function cleanup() {
   observer?.disconnect();
-  observer = null;
   clearInterval(intervalId);
-  intervalId = null;
 }
 
 if (document.readyState === "loading") {
