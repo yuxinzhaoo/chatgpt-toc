@@ -138,12 +138,13 @@ function createTOCPanel() {
   toggleBtn.addEventListener("click", () => {
     const ul = panel.querySelector("#toc-list");
     if (isMinimized) {
-      ul.style.maxHeight = "500px";
-      ul.style.opacity = "1";
+      ul.style.display = "block";
+      panel.style.height = panel.dataset.originalHeight || "400px"; // 可自定义默认高度
       toggleBtn.style.background = "#ffbd2e";
     } else {
-      ul.style.maxHeight = "0";
-      ul.style.opacity = "0";
+      panel.dataset.originalHeight = panel.offsetHeight + "px"; // 保存当前高度用于还原
+      ul.style.display = "none";
+      panel.style.height = "36px"; // 只显示顶部拖动条高度
       toggleBtn.style.background = "#28c840";
     }
     isMinimized = !isMinimized;
