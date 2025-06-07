@@ -67,6 +67,31 @@ function setupPanelStyle() {
     maxHeight: "95vh",
     flexShrink: "0",
   });
+
+  
+  const tocList = panel.querySelector("#toc-list");
+  const noteEditor = panel.querySelector("#note-editor");
+  const noteArea = panel.querySelector("#note-area");
+  const dropzone = panel.querySelector("#notebook-dropzone");
+  const btnBack = panel.querySelector("#btn-back");
+
+  // 拖拽进入文本时切换到编辑模式
+  dropzone.addEventListener("dragover", (e) => e.preventDefault());
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const text = e.dataTransfer.getData("text/plain");
+    if (text.trim()) {
+      tocList.style.display = "none";
+      noteEditor.style.display = "block";
+      noteArea.value = text.trim();
+    }
+  });
+
+  // 返回按钮切换回目录
+  btnBack.addEventListener("click", () => {
+    noteEditor.style.display = "none";
+    tocList.style.display = "block";
+  });
 }
 
 function setupPanelEvents() {
