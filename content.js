@@ -68,12 +68,25 @@ function setupPanelStyle() {
     flexShrink: "0",
   });
 
-  
   const tocList = panel.querySelector("#toc-list");
   const noteEditor = panel.querySelector("#note-editor");
   const noteArea = panel.querySelector("#note-area");
   const dropzone = panel.querySelector("#notebook-dropzone");
   const btnBack = panel.querySelector("#btn-back");
+
+  // 添加样式：让 noteEditor 绝对定位在主区域
+  Object.assign(noteEditor.style, {
+    position: "absolute",
+    top: "36px", // 留出顶部 dragbar 高度
+    left: "0",
+    right: "0",
+    bottom: "0",
+    background: "#fff",
+    padding: "10px",
+    overflow: "auto",
+    display: "none",
+    zIndex: "1",
+  });
 
   // 拖拽进入文本时切换到编辑模式
   dropzone.addEventListener("dragover", (e) => e.preventDefault());
@@ -84,6 +97,7 @@ function setupPanelStyle() {
       tocList.style.display = "none";
       noteEditor.style.display = "block";
       noteArea.value = text.trim();
+      localStorage.setItem(STORAGE_KEY, text.trim());
     }
   });
 
@@ -91,6 +105,27 @@ function setupPanelStyle() {
   btnBack.addEventListener("click", () => {
     noteEditor.style.display = "none";
     tocList.style.display = "block";
+  });
+
+  dropzone.addEventListener("click", () => {
+    tocList.style.display = "none";
+    noteEditor.style.display = "block";
+    const savedNote = localStorage.getItem(STORAGE_KEY);
+    noteArea.value = savedNote || "(空白笔记，点击拖拽或输入)";
+  });
+
+  //
+  const STORAGE_KEY = "chatgpt_toc_note";
+
+  // 加载已有笔记（如果有）
+  const savedNote = localStorage.getItem(STORAGE_KEY);
+  if (savedNote) {
+    noteArea.value = savedNote;
+  }
+
+  // 每次编辑就保存到 localStorage
+  noteArea.addEventListener("input", () => {
+    localStorage.setItem(STORAGE_KEY, noteArea.value);
   });
 }
 
