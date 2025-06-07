@@ -73,6 +73,7 @@ function setupPanelStyle() {
   const noteArea = panel.querySelector("#note-area");
   const dropzone = panel.querySelector("#notebook-dropzone");
   const btnBack = panel.querySelector("#btn-back");
+  const STORAGE_KEY = "chatgpt_toc_note";
 
   // 添加样式：让 noteEditor 绝对定位在主区域
   Object.assign(noteEditor.style, {
@@ -92,13 +93,21 @@ function setupPanelStyle() {
   dropzone.addEventListener("dragover", (e) => e.preventDefault());
   dropzone.addEventListener("drop", (e) => {
     e.preventDefault();
-    const text = e.dataTransfer.getData("text/plain");
-    if (text.trim()) {
-      tocList.style.display = "none";
-      noteEditor.style.display = "block";
-      noteArea.value = text.trim();
-      localStorage.setItem(STORAGE_KEY, text.trim());
-    }
+    const text = e.dataTransfer.getData("text/plain").trim();
+    if (!text) return;
+
+    // 加载旧内容
+    const oldNote = localStorage.getItem(STORAGE_KEY) || "";
+
+    // 拼接新内容（自动换行）
+    const newNote = oldNote ? oldNote + "\n\n" + text : text;
+
+    // 保存更新
+    localStorage.setItem(STORAGE_KEY, newNote);
+
+    tocList.style.display = "none";
+    noteEditor.style.display = "block";
+    noteArea.value = newNote;
   });
 
   // 返回按钮切换回目录
@@ -114,9 +123,6 @@ function setupPanelStyle() {
     noteArea.value = savedNote || "(空白笔记，点击拖拽或输入)";
   });
 
-  //
-  const STORAGE_KEY = "chatgpt_toc_note";
-
   // 加载已有笔记（如果有）
   const savedNote = localStorage.getItem(STORAGE_KEY);
   if (savedNote) {
@@ -126,6 +132,30 @@ function setupPanelStyle() {
   // 每次编辑就保存到 localStorage
   noteArea.addEventListener("input", () => {
     localStorage.setItem(STORAGE_KEY, noteArea.value);
+  });
+
+  // noteEditor
+  noteEditor.addEventListener("dragover", (e) => e.preventDefault());
+
+  noteEditor.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const text = e.dataTransfer.getData("text/plain").trim();
+    if (!text) return;
+
+    // 当前内容 + 新拖入内容
+    const start = noteArea.selectionStart;
+    const end = noteArea.selectionEnd;
+    const original = noteArea.value;
+
+    // 在光标位置插入拖入内容
+    const newText = original.slice(0, start) + text + original.slice(end);
+
+    // 更新文本框和 localStorage
+    noteArea.value = newText;
+    localStorage.setItem(STORAGE_KEY, newText);
+
+    // // 恢复光标位置（可选）
+    // noteArea.selectionStart = noteArea.selectionEnd = start + text.length;
   });
 }
 
