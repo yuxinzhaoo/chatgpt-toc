@@ -13,56 +13,40 @@ function createTOCPanel() {
   panel = document.createElement("div");
   panel.id = "chatgpt-toc-panel";
   panel.setAttribute("data-plugin", "chatgpt-toc");
-  panel.innerHTML = `
-    <div id="chatgpt-toc-dragbar" style="
-      height: 36px;
-      background: linear-gradient(to bottom, #f9f9f9, #ececec);
-      border-bottom: 1px solid #ddd;
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
-      cursor: move;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      font-weight: 600;
-      font-size: 14px;
-      font-family: 'Segoe UI', sans-serif;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    ">
-      <div style="display: flex; align-items: center;">
-        <div id="btn-toggle" style="
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: #ffbd2e;
-          cursor: pointer;
-          transition: background 0.2s;
-        "></div>
-      </div>
-      <div style="flex: 1; text-align: center;">My Prompts</div>
-      <div style="width: 12px;"></div>
-    </div>
-    <ul id="toc-list" style="
-      flex: 1;
-      margin: 0;
-      padding: 8px 0;
-      height: 100%;
-      overflow-y: auto;
-      transition: opacity 0.3s ease;
-    "></ul>
-    <div class="resize-handle resize-top"></div>
-    <div class="resize-handle resize-right"></div>
-    <div class="resize-handle resize-bottom"></div>
-    <div class="resize-handle resize-left"></div>
-    <div class="resize-handle resize-top-left"></div>
-    <div class="resize-handle resize-top-right"></div>
-    <div class="resize-handle resize-bottom-left"></div>
-    <div class="resize-handle resize-bottom-right"></div>
-  `;
+  fetch(chrome.runtime.getURL("panel.html"))
+    .then((res) => res.text()) // ✅ 解析 HTML 内容
+    .then((html) => {
+      panel.innerHTML = html;
+      setupPanelStyle();
+      document.body.appendChild(panel);
+      setupPanelEvents();
+      updateTOC();
 
+      // ✅ 注入 resize 样式（这段原来写在外面，要挪进来）
+      if (!document.getElementById("chatgpt-toc-resize-style")) {
+        const style = document.createElement("style");
+        style.id = "chatgpt-toc-resize-style";
+        style.textContent = `
+      .resize-handle {
+        position: absolute;
+        background: transparent;
+        z-index: 9999;
+      }
+      .resize-top { top: -2px; left: 0; right: 0; height: 6px; cursor: n-resize; }
+      .resize-right { top: 0; right: -2px; bottom: 0; width: 6px; cursor: e-resize; }
+      .resize-bottom { bottom: -2px; left: 0; right: 0; height: 6px; cursor: s-resize; }
+      .resize-left { top: 0; left: -2px; bottom: 0; width: 6px; cursor: w-resize; }
+      .resize-top-left { top: -2px; left: -2px; width: 10px; height: 10px; cursor: nw-resize; }
+      .resize-top-right { top: -2px; right: -2px; width: 10px; height: 10px; cursor: ne-resize; }
+      .resize-bottom-left { bottom: -2px; left: -2px; width: 10px; height: 10px; cursor: sw-resize; }
+      .resize-bottom-right { bottom: -2px; right: -2px; width: 10px; height: 10px; cursor: se-resize; }
+    `;
+        document.head.appendChild(style);
+      }
+    });
+}
+
+function setupPanelStyle() {
   Object.assign(panel.style, {
     position: "fixed",
     top: "100px",
@@ -76,35 +60,16 @@ function createTOCPanel() {
     borderRadius: "12px",
     fontSize: "14px",
     fontFamily: "'Segoe UI', sans-serif",
-    display: "block", // ✅ 替换 flex 为 block
+    display: "block",
     overflow: "hidden",
-    height: "70vh", // ✅ 你想要的高度
-    minHeight: "150px", // ✅ 防止被压缩
-    maxHeight: "95vh", // ✅ 解除限制
-    flexShrink: "0", // ✅ 加这一行防止被父 flex 压缩（多余但保险）
+    height: "70vh",
+    minHeight: "150px",
+    maxHeight: "95vh",
+    flexShrink: "0",
   });
+}
 
-  document.body.appendChild(panel);
-  updateTOC();
-
-  const style = document.createElement("style");
-  style.textContent = `
-    .resize-handle {
-      position: absolute;
-      background: transparent;
-      z-index: 9999;
-    }
-    .resize-top { top: -2px; left: 0; right: 0; height: 6px; cursor: n-resize; }
-    .resize-right { top: 0; right: -2px; bottom: 0; width: 6px; cursor: e-resize; }
-    .resize-bottom { bottom: -2px; left: 0; right: 0; height: 6px; cursor: s-resize; }
-    .resize-left { top: 0; left: -2px; bottom: 0; width: 6px; cursor: w-resize; }
-    .resize-top-left { top: -2px; left: -2px; width: 10px; height: 10px; cursor: nw-resize; }
-    .resize-top-right { top: -2px; right: -2px; width: 10px; height: 10px; cursor: ne-resize; }
-    .resize-bottom-left { bottom: -2px; left: -2px; width: 10px; height: 10px; cursor: sw-resize; }
-    .resize-bottom-right { bottom: -2px; right: -2px; width: 10px; height: 10px; cursor: se-resize; }
-  `;
-  document.head.appendChild(style);
-
+function setupPanelEvents() {
   // 拖动逻辑
   const dragbar = panel.querySelector("#chatgpt-toc-dragbar");
   let isDragging = false,

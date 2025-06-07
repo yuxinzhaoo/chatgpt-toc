@@ -1,0 +1,93 @@
+<div
+  id="chatgpt-toc-dragbar"
+  style="
+    height: 36px;
+    background: linear-gradient(to bottom, #f9f9f9, #ececec);
+    border-bottom: 1px solid #ddd;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    cursor: move;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: 'Segoe UI', sans-serif;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  "
+>
+  <div style="display: flex; align-items: center">
+    <div
+      id="btn-toggle"
+      style="
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ffbd2e;
+        cursor: pointer;
+        transition: background 0.2s;
+      "
+    ></div>
+  </div>
+  <div style="flex: 1; text-align: center">My Prompts</div>
+  <div style="width: 12px"></div>
+</div>
+
+<div
+  style="
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 36px);
+    overflow: hidden;
+  "
+>
+  <ul
+    id="toc-list"
+    style="
+      flex: 1;
+      margin: 0;
+      padding: 8px;
+      overflow-y: auto;
+      transition: opacity 0.3s ease;
+      border-bottom: 1px solid #ddd;
+    "
+  ></ul>
+
+  <div
+    id="notebook-dropzone"
+    style="
+      border: 2px dashed #aaa;
+      padding: 10px;
+      margin: 6px;
+      background: #fafafa;
+      font-size: 13px;
+      min-height: 60px;
+    "
+  >
+    拖拽文本到这里创建笔记...
+  </div>
+
+  <ul
+    id="notebook-list"
+    style="
+      list-style: none;
+      margin: 0 6px 6px 6px;
+      padding: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+      border-top: 1px solid #eee;
+    "
+  ></ul>
+</div>
+
+<div class="resize-handle resize-top"></div>
+<div class="resize-handle resize-right"></div>
+<div class="resize-handle resize-bottom"></div>
+<div class="resize-handle resize-left"></div>
+<div class="resize-handle resize-top-left"></div>
+<div class="resize-handle resize-top-right"></div>
+<div class="resize-handle resize-bottom-left"></div>
+<div class="resize-handle resize-bottom-right"></div>

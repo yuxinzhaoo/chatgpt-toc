@@ -4,6 +4,12 @@
   "version": "1.0",
   "description": "为 ChatGPT 添加目录导航功能",
   "permissions": ["scripting", "activeTab"],
+  "web_accessible_resources": [
+    {
+      "resources": ["panel.html"],
+      "matches": ["https://chatgpt.com/*"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["https://chatgpt.com/*"],
