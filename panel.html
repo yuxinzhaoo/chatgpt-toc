@@ -98,7 +98,19 @@
     >
       ← Back
     </button>
-    <textarea id="note-area" style="width: 100%; height: 160px"></textarea>
+    <div
+      id="note-area"
+      contenteditable="true"
+      style="
+        width: 100%;
+        height: 160px;
+        overflow: auto;
+        outline: none;
+        border: 1px solid #ccc;
+        padding: 8px;
+        border-radius: 6px;
+      "
+    ></div>
   </div>
 </div>
 <div class="resize-handle resize-top"></div>

@@ -6,6 +6,7 @@ let panel;
 const questions = new Map();
 let observer;
 let intervalId;
+const STORAGE_KEY = "chatgpt_toc_note";
 
 function createTOCPanel() {
   if (document.getElementById("chatgpt-toc-panel")) return;
@@ -47,6 +48,13 @@ function createTOCPanel() {
 }
 
 function setupPanelStyle() {
+  const tocList = panel.querySelector("#toc-list");
+  const noteEditor = panel.querySelector("#note-editor");
+  const noteArea = panel.querySelector("#note-area");
+  const dropzone = panel.querySelector("#notebook-dropzone");
+  const btnBack = panel.querySelector("#btn-back");
+  new DragInsertManager(noteArea, STORAGE_KEY);
+
   Object.assign(panel.style, {
     position: "fixed",
     top: "100px",
@@ -68,13 +76,12 @@ function setupPanelStyle() {
     flexShrink: "0",
   });
 
-  const tocList = panel.querySelector("#toc-list");
-  const noteEditor = panel.querySelector("#note-editor");
-  const noteArea = panel.querySelector("#note-area");
-  const dropzone = panel.querySelector("#notebook-dropzone");
-  const btnBack = panel.querySelector("#btn-back");
-  const STORAGE_KEY = "chatgpt_toc_note";
-
+  Object.assign(tocList.style, {
+    flex: "1",
+    overflowY: "auto",
+    overflowX: "hidden",
+    maxHeight: "100%",
+  });
   // 添加样式：让 noteEditor 绝对定位在主区域
   Object.assign(noteEditor.style, {
     position: "absolute",
@@ -93,21 +100,37 @@ function setupPanelStyle() {
   dropzone.addEventListener("dragover", (e) => e.preventDefault());
   dropzone.addEventListener("drop", (e) => {
     e.preventDefault();
+
     const text = e.dataTransfer.getData("text/plain").trim();
     if (!text) return;
 
-    // 加载旧内容
-    const oldNote = localStorage.getItem(STORAGE_KEY) || "";
-
-    // 拼接新内容（自动换行）
-    const newNote = oldNote ? oldNote + "\n\n" + text : text;
-
-    // 保存更新
-    localStorage.setItem(STORAGE_KEY, newNote);
-
     tocList.style.display = "none";
     noteEditor.style.display = "block";
-    noteArea.value = newNote;
+    noteArea.focus();
+
+    // 判断当前是否为空
+    const isEmpty = noteArea.innerText.trim().length === 0;
+
+    const newNode = document.createTextNode(text + "\n\n");
+
+    if (isEmpty) {
+      // 插入到最前
+      noteArea.innerText = ""; // 清空所有默认文本（包括空白提示）
+      noteArea.appendChild(newNode);
+    } else {
+      // 插入到末尾
+      const range = document.createRange();
+      range.selectNodeContents(noteArea);
+      range.collapse(false); // 移动到末尾
+
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      range.insertNode(newNode);
+    }
+
+    // 更新本地存储
+    localStorage.setItem(STORAGE_KEY, noteArea.innerText);
   });
 
   // 返回按钮切换回目录
@@ -120,43 +143,148 @@ function setupPanelStyle() {
     tocList.style.display = "none";
     noteEditor.style.display = "block";
     const savedNote = localStorage.getItem(STORAGE_KEY);
-    noteArea.value = savedNote || "(空白笔记，点击拖拽或输入)";
+    noteArea.innerText = savedNote || "(空白笔记，点击拖拽或输入)";
   });
 
   // 加载已有笔记（如果有）
   const savedNote = localStorage.getItem(STORAGE_KEY);
   if (savedNote) {
-    noteArea.value = savedNote;
+    noteArea.innerText = savedNote;
   }
 
   // 每次编辑就保存到 localStorage
   noteArea.addEventListener("input", () => {
-    localStorage.setItem(STORAGE_KEY, noteArea.value);
+    localStorage.setItem(STORAGE_KEY, noteArea.innerText);
   });
+}
 
-  // noteEditor
-  noteEditor.addEventListener("dragover", (e) => e.preventDefault());
+class DragInsertManager {
+  constructor(editableEl, storageKey) {
+    this.el = editableEl;
+    this.key = storageKey;
+    this.fakeCaret = null;
+    this.lastCaretOffset = null;
+    this.isHovering = false;
+    this.dragCounter = 0;
 
-  noteEditor.addEventListener("drop", (e) => {
+    this.ensureStyle();
+    this.bindEvents();
+  }
+
+  ensureStyle() {
+    if (!document.getElementById("fake-caret-style")) {
+      const style = document.createElement("style");
+      style.id = "fake-caret-style";
+      style.textContent = `
+        .fake-caret {
+          display: inline-block;
+          width: 1px;
+          height: 1em;
+          background: #1a73e8;
+          animation: blink 1s steps(2, start) infinite;
+        }
+        @keyframes blink {
+          to { visibility: hidden; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+
+  bindEvents() {
+    this.el.addEventListener("dragstart", (e) => this.onDragStart(e));
+    this.el.addEventListener("dragenter", (e) => this.onDragEnter(e));
+    this.el.addEventListener("dragleave", (e) => this.onDragLeave(e));
+    this.el.addEventListener("dragover", (e) => this.onDragOver(e));
+    this.el.addEventListener("drop", (e) => this.onDrop(e));
+    this.el.addEventListener("mousedown", () => {
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed) {
+        this.el.setAttribute("draggable", "true");
+      } else {
+        this.el.removeAttribute("draggable");
+      }
+    });
+  }
+
+  onDragStart(e) {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      this.draggedRange = selection.getRangeAt(0).cloneRange();
+    }
+  }
+
+  onDragEnter(e) {
+    this.dragCounter += 1;
+    if (this.dragCounter === 1) {
+      this.el.style.background = "#f9f9f9";
+    }
+  }
+
+  onDragLeave(e) {
+    this.dragCounter -= 1;
+    if (this.dragCounter === 0) {
+      this.el.style.background = "white";
+    }
+    console.log(this.dragCounter);
+  }
+
+  onDragOver(e) {
     e.preventDefault();
-    const text = e.dataTransfer.getData("text/plain").trim();
+    const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+    if (!pos) return;
+
+    const range = document.createRange();
+    range.setStart(pos.offsetNode, pos.offset);
+    range.collapse(true);
+
+    const offsetKey = `${range.startContainer}_${range.startOffset}`;
+    if (offsetKey === this.lastCaretOffset) return;
+    this.lastCaretOffset = offsetKey;
+
+    if (this.fakeCaret && this.fakeCaret.parentNode) this.fakeCaret.remove();
+
+    this.fakeCaret = document.createElement("span");
+    this.fakeCaret.className = "fake-caret";
+    range.insertNode(this.fakeCaret);
+  }
+
+  onDrop(e) {
+    e.preventDefault();
+
+    const text = e.dataTransfer.getData("text/plain");
     if (!text) return;
 
-    // 当前内容 + 新拖入内容
-    const start = noteArea.selectionStart;
-    const end = noteArea.selectionEnd;
-    const original = noteArea.value;
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
 
-    // 在光标位置插入拖入内容
-    const newText = original.slice(0, start) + text + original.slice(end);
+    // 💡 删除原位置的内容（内部拖动才执行）
+    if (
+      this.draggedRange &&
+      this.el.contains(this.draggedRange.startContainer)
+    ) {
+      this.draggedRange.deleteContents();
+      this.draggedRange = null;
+    }
 
-    // 更新文本框和 localStorage
-    noteArea.value = newText;
-    localStorage.setItem(STORAGE_KEY, newText);
+    if (this.fakeCaret && this.fakeCaret.parentNode) this.fakeCaret.remove();
+    this.dragCounter = 0;
+    this.lastCaretOffset = null;
+    this.isHovering = false;
+    this.el.style.background = "white";
 
-    // // 恢复光标位置（可选）
-    // noteArea.selectionStart = noteArea.selectionEnd = start + text.length;
-  });
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text + "\n"));
+
+    range.collapse(false);
+    this.el.focus();
+
+    localStorage.setItem(this.key, this.el.innerText);
+  }
 }
 
 function setupPanelEvents() {
