@@ -434,6 +434,14 @@ function setupPanelEvents() {
       document.addEventListener("mouseup", onUp);
     });
   });
+
+  const closeBtn = panel.querySelector("#btn-close");
+  closeBtn.addEventListener("click", () => {
+    isManuallyClosed = true;
+    cleanup();
+    panel.style.display = "none"; // ✅ 隐藏而不是移除 DOM
+    injectReopenButton(); // ✅ 添加恢复按钮
+  });
 }
 
 function updateTOC() {
@@ -552,6 +560,60 @@ function init() {
   setInterval(() => {
     if (!document.getElementById("chatgpt-toc-panel")) createTOCPanel();
   }, 1000);
+
+  window.reopenTOCPanel = function () {
+    const existing = document.getElementById("chatgpt-toc-panel");
+    if (existing) {
+      existing.style.display = "block"; // ✅ 恢复显示
+      isManuallyClosed = false;
+      setupMutationObserver();
+      monitorChatSwitch();
+      updateTOC();
+
+      // ✅ 恢复时移除按钮
+      const reopenBtn = document.getElementById("chatgpt-reopen-btn");
+      if (reopenBtn) reopenBtn.remove();
+    } else {
+      isManuallyClosed = false;
+      createTOCPanel();
+    }
+  };
+}
+
+function injectReopenButton() {
+  // 如果已存在，不重复创建
+  if (document.getElementById("chatgpt-reopen-btn")) return;
+
+  const btn = document.createElement("div");
+  btn.id = "chatgpt-reopen-btn";
+  btn.innerText = "📌";
+
+  Object.assign(btn.style, {
+    position: "fixed",
+    bottom: "20px",
+    right: "20px",
+    width: "36px",
+    height: "36px",
+    lineHeight: "36px",
+    textAlign: "center",
+    background: "#28c840",
+    color: "#fff",
+    fontSize: "20px",
+    borderRadius: "50%",
+    cursor: "pointer",
+    zIndex: "10000",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+    userSelect: "none",
+  });
+
+  btn.title = "点击恢复 TOC 面板";
+  btn.addEventListener("click", () => {
+    if (typeof window.reopenTOCPanel === "function") {
+      window.reopenTOCPanel();
+    }
+  });
+
+  document.body.appendChild(btn);
 }
 
 if (document.readyState === "loading") {
