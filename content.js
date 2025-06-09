@@ -616,8 +616,20 @@ function injectReopenButton() {
   document.body.appendChild(btn);
 }
 
+function safeInitByToggle() {
+  chrome.storage.sync.get(["pluginEnabled"], (res) => {
+    if (res.pluginEnabled) {
+      init();
+    } else {
+      console.log("[ChatGPT TOC] 插件未启用，未执行 init()");
+    }
+  });
+}
+
+// 入口改成带开关判断
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", safeInitByToggle);
+  console.log("[TOC] content.js running");
 } else {
-  init();
+  safeInitByToggle();
 }
