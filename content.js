@@ -629,7 +629,26 @@ function safeInitByToggle() {
 // 入口改成带开关判断
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", safeInitByToggle);
-  console.log("[TOC] content.js running");
 } else {
   safeInitByToggle();
 }
+
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.action === "togglePlugin") {
+    if (msg.value === true) {
+      // ✅ 启用插件逻辑（等价于点击恢复按钮）
+      if (typeof window.reopenTOCPanel === "function") {
+        window.reopenTOCPanel();
+      } else {
+        safeInitByToggle(); // 确保没有重复创建
+      }
+    } else {
+      // ✅ 关闭插件逻辑（等价于点击红色关闭按钮）
+      isManuallyClosed = true;
+      cleanup();
+      const panel = document.getElementById("chatgpt-toc-panel");
+      if (panel) panel.style.display = "none";
+      injectReopenButton();
+    }
+  }
+});
