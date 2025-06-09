@@ -468,31 +468,73 @@ function updateTOC() {
   let index = 1;
   questions.forEach((node, text) => {
     const li = document.createElement("li");
+    li.style.display = "flex";
+    li.style.alignItems = "center";
+    li.style.justifyContent = "space-between";
+    li.style.marginBottom = "4px";
+
+    // 文本链接
     const a = document.createElement("a");
     a.href = "#";
     a.textContent = `${index++}. ${text.slice(0, 50)}`;
-    a.setAttribute("draggable", "false"); // ✅ 禁止链接拖拽
-    a.addEventListener("dragstart", (e) => e.preventDefault()); // ✅ 防止拖拽提示框
+    a.setAttribute("draggable", "false");
     Object.assign(a.style, {
-      display: "block",
+      flex: "1",
       padding: "6px 10px",
       borderRadius: "6px",
       color: "#1a73e8",
       textDecoration: "none",
-      transition: "background 0.2s",
       fontSize: "13px",
       lineHeight: "1.4",
+      overflow: "hidden",
+      whiteSpace: "nowrap",
+      textOverflow: "ellipsis",
     });
-    a.addEventListener("mouseenter", () => (a.style.background = "#f1f3f4"));
-    a.addEventListener(
-      "mouseleave",
-      () => (a.style.background = "transparent")
-    );
-    a.onclick = (e) => {
+    a.addEventListener("click", (e) => {
       e.preventDefault();
       node.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
+    });
+
+    // 编辑按钮
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️";
+    Object.assign(editBtn.style, {
+      marginLeft: "4px",
+      cursor: "pointer",
+      border: "none",
+      background: "transparent",
+    });
+    editBtn.addEventListener("click", () => {
+      const newText = prompt("编辑标题：", text);
+      if (newText && newText.trim()) {
+        questions.delete(text); // 删除旧 key
+        questions.set(newText.trim(), node); // 设置新 key
+        updateTOC();
+      }
+    });
+
+    // 删除按钮
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "❌";
+    Object.assign(deleteBtn.style, {
+      marginLeft: "4px",
+      cursor: "pointer",
+      border: "none",
+      background: "transparent",
+    });
+    deleteBtn.addEventListener("click", () => {
+      questions.delete(text);
+      updateTOC();
+    });
+
+    // 组合按钮容器
+    const btnContainer = document.createElement("div");
+    btnContainer.appendChild(editBtn);
+    btnContainer.appendChild(deleteBtn);
+
+    // 插入元素
     li.appendChild(a);
+    li.appendChild(btnContainer);
     ul.appendChild(li);
   });
 }
