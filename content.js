@@ -18,12 +18,12 @@ function createTOCPanel() {
     .then((res) => res.text()) // ✅ 解析 HTML 内容
     .then((html) => {
       panel.innerHTML = html;
-      setupPanelStyle();
       document.body.appendChild(panel);
+      setupPanelStyle();
       setupPanelEvents();
       updateTOC();
 
-      // ✅ 注入 resize 样式（这段原来写在外面，要挪进来）
+      // ✅ 式注入 resize 样（这段原来写在外面，要挪进来）
       if (!document.getElementById("chatgpt-toc-resize-style")) {
         const style = document.createElement("style");
         style.id = "chatgpt-toc-resize-style";
@@ -50,10 +50,6 @@ function createTOCPanel() {
 function setupPanelStyle() {
   const tocList = panel.querySelector("#toc-list");
   const noteEditor = panel.querySelector("#note-editor");
-  const noteArea = panel.querySelector("#note-area");
-  const dropzone = panel.querySelector("#notebook-dropzone");
-  const btnBack = panel.querySelector("#btn-back");
-  new DragInsertManager(noteArea, STORAGE_KEY);
 
   Object.assign(panel.style, {
     position: "fixed",
@@ -94,67 +90,6 @@ function setupPanelStyle() {
     overflow: "auto",
     display: "none",
     zIndex: "1",
-  });
-
-  // 拖拽进入文本时切换到编辑模式
-  dropzone.addEventListener("dragover", (e) => e.preventDefault());
-  dropzone.addEventListener("drop", (e) => {
-    e.preventDefault();
-
-    const text = e.dataTransfer.getData("text/plain").trim();
-    if (!text) return;
-
-    tocList.style.display = "none";
-    noteEditor.style.display = "block";
-    noteArea.focus();
-
-    // 判断当前是否为空
-    const isEmpty = noteArea.innerText.trim().length === 0;
-
-    const newNode = document.createTextNode(text + "\n\n");
-
-    if (isEmpty) {
-      // 插入到最前
-      noteArea.innerText = ""; // 清空所有默认文本（包括空白提示）
-      noteArea.appendChild(newNode);
-    } else {
-      // 插入到末尾
-      const range = document.createRange();
-      range.selectNodeContents(noteArea);
-      range.collapse(false); // 移动到末尾
-
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      range.insertNode(newNode);
-    }
-
-    // 更新本地存储
-    localStorage.setItem(STORAGE_KEY, noteArea.innerText);
-  });
-
-  // 返回按钮切换回目录
-  btnBack.addEventListener("click", () => {
-    noteEditor.style.display = "none";
-    tocList.style.display = "block";
-  });
-
-  dropzone.addEventListener("click", () => {
-    tocList.style.display = "none";
-    noteEditor.style.display = "block";
-    const savedNote = localStorage.getItem(STORAGE_KEY);
-    noteArea.innerText = savedNote || "(空白笔记，点击拖拽或输入)";
-  });
-
-  // 加载已有笔记（如果有）
-  const savedNote = localStorage.getItem(STORAGE_KEY);
-  if (savedNote) {
-    noteArea.innerText = savedNote;
-  }
-
-  // 每次编辑就保存到 localStorage
-  noteArea.addEventListener("input", () => {
-    localStorage.setItem(STORAGE_KEY, noteArea.innerText);
   });
 }
 
@@ -288,6 +223,73 @@ class DragInsertManager {
 }
 
 function setupPanelEvents() {
+  const tocList = panel.querySelector("#toc-list");
+  const noteEditor = panel.querySelector("#note-editor");
+  const noteArea = panel.querySelector("#note-area");
+  const dropzone = panel.querySelector("#notebook-dropzone");
+  const btnBack = panel.querySelector("#btn-back");
+  new DragInsertManager(noteArea, STORAGE_KEY);
+
+  // 拖拽进入文本时切换到编辑模式
+  dropzone.addEventListener("dragover", (e) => e.preventDefault());
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+
+    const text = e.dataTransfer.getData("text/plain").trim();
+    if (!text) return;
+
+    tocList.style.display = "none";
+    noteEditor.style.display = "block";
+    noteArea.focus();
+
+    // 判断当前是否为空
+    const isEmpty = noteArea.innerText.trim().length === 0;
+
+    const newNode = document.createTextNode(text + "\n\n");
+
+    if (isEmpty) {
+      // 插入到最前
+      noteArea.innerText = ""; // 清空所有默认文本（包括空白提示）
+      noteArea.appendChild(newNode);
+    } else {
+      // 插入到末尾
+      const range = document.createRange();
+      range.selectNodeContents(noteArea);
+      range.collapse(false); // 移动到末尾
+
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      range.insertNode(newNode);
+    }
+
+    // 更新本地存储
+    localStorage.setItem(STORAGE_KEY, noteArea.innerText);
+  });
+
+  // 返回按钮切换回目录
+  btnBack.addEventListener("click", () => {
+    noteEditor.style.display = "none";
+    tocList.style.display = "block";
+  });
+
+  dropzone.addEventListener("click", () => {
+    tocList.style.display = "none";
+    noteEditor.style.display = "block";
+    const savedNote = localStorage.getItem(STORAGE_KEY);
+    // 加载已有笔记（如果有）
+    if (savedNote) {
+      noteArea.innerText = savedNote || "(空白笔记，点击拖拽或输入)";
+    }
+  });
+
+  // 每次编辑就保存到 localStorage
+  noteArea.addEventListener("input", () => {
+    localStorage.setItem(STORAGE_KEY, noteArea.innerText);
+  });
+
+  // --------------------------------------------------
+
   // 拖动逻辑
   const dragbar = panel.querySelector("#chatgpt-toc-dragbar");
   let isDragging = false,
@@ -658,39 +660,39 @@ function injectReopenButton() {
   document.body.appendChild(btn);
 }
 
-function safeInitByToggle() {
-  chrome.storage.sync.get(["pluginEnabled"], (res) => {
-    if (res.pluginEnabled) {
-      init();
-    } else {
-      console.log("[ChatGPT TOC] 插件未启用，未执行 init()");
-    }
-  });
-}
+// function safeInitByToggle() {
+//   chrome.storage.sync.get(["pluginEnabled"], (res) => {
+//     if (res.pluginEnabled) {
+//       init();
+//     } else {
+//       console.log("[ChatGPT TOC] 插件未启用，未执行 init()");
+//     }
+//   });
+// }
 
 // 入口改成带开关判断
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", safeInitByToggle);
+  document.addEventListener("DOMContentLoaded", init);
 } else {
-  safeInitByToggle();
+  init();
 }
 
-chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.action === "togglePlugin") {
-    if (msg.value === true) {
-      // ✅ 启用插件逻辑（等价于点击恢复按钮）
-      if (typeof window.reopenTOCPanel === "function") {
-        window.reopenTOCPanel();
-      } else {
-        safeInitByToggle(); // 确保没有重复创建
-      }
-    } else {
-      // ✅ 关闭插件逻辑（等价于点击红色关闭按钮）
-      isManuallyClosed = true;
-      cleanup();
-      const panel = document.getElementById("chatgpt-toc-panel");
-      if (panel) panel.style.display = "none";
-      injectReopenButton();
-    }
-  }
-});
+// chrome.runtime.onMessage.addListener((msg) => {
+//   if (msg.action === "togglePlugin") {
+//     if (msg.value === true) {
+//       // ✅ 启用插件逻辑（等价于点击恢复按钮）
+//       if (typeof window.reopenTOCPanel === "function") {
+//         window.reopenTOCPanel();
+//       } else {
+//         safeInitByToggle(); // 确保没有重复创建
+//       }
+//     } else {
+//       // ✅ 关闭插件逻辑（等价于点击红色关闭按钮）
+//       isManuallyClosed = true;
+//       cleanup();
+//       const panel = document.getElementById("chatgpt-toc-panel");
+//       if (panel) panel.style.display = "none";
+//       injectReopenButton();
+//     }
+//   }
+// });
