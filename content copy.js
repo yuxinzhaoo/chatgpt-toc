@@ -8,6 +8,7 @@ let observer;
 let intervalId;
 const STORAGE_KEY = "chatgpt_toc_note";
 const manualTOCItems = [];
+let draggedMessageId = null;
 
 function createTOCPanel() {
   if (document.getElementById("chatgpt-toc-panel")) return;
@@ -147,6 +148,10 @@ class DragInsertManager {
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
       this.draggedRange = selection.getRangeAt(0).cloneRange();
+
+      const startEl = this.draggedRange.startContainer.parentElement;
+      const anchorEl = startEl?.closest("[data-start]");
+      draggedMessageId = anchorEl?.getAttribute("data-start") || null;
     }
   }
 
@@ -239,7 +244,7 @@ function setupPanelEvents() {
     if (!text) return;
 
     const id = Date.now().toString();
-    manualTOCItems.push({ id, text });
+    manualTOCItems.push({ id, text, anchor: draggedMessageId });
     renderManualTOC();
   });
 
@@ -477,6 +482,28 @@ function renderManualTOC() {
 
     const textSpan = document.createElement("span");
     textSpan.textContent = `${index + 1}. ${item.text}`;
+    textSpan.style.cursor = "pointer";
+    textSpan.addEventListener("click", () => {
+      let el = null;
+
+      if (item.anchor) {
+        el = document.querySelector(`[data-start="${item.anchor}"]`);
+      }
+
+      // fallback：用内容模糊匹配
+      if (!el) {
+        const allEls = [...document.querySelectorAll("h1, h2, h3, p, pre")];
+        el = allEls.find((e) => e.textContent.includes(item.text.slice(0, 20)));
+      }
+
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.style.background = "#ffffcc";
+        setTimeout(() => (el.style.background = ""), 1500);
+      } else {
+        alert("⚠️ 无法定位原文，请检查内容是否还在页面中");
+      }
+    });
 
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️";
@@ -501,144 +528,6 @@ function renderManualTOC() {
     ul.appendChild(li);
   });
 }
-
-// function updateTOC() {
-//   if (!panel) return;
-//   const ul = panel.querySelector("#toc-list");
-//   if (!ul) return;
-
-//   ul.style.scrollbarWidth = "thin";
-//   ul.style.msOverflowStyle = "none";
-//   ul.style.overflowY = "auto";
-
-//   const styleId = "custom-scroll-style";
-//   if (!document.getElementById(styleId)) {
-//     const style = document.createElement("style");
-//     style.id = styleId;
-//     style.innerHTML = `
-//       #toc-list::-webkit-scrollbar { width: 6px; }
-//       #toc-list::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 4px; }
-//     `;
-//     document.head.appendChild(style);
-//   }
-
-//   ul.innerHTML = "";
-//   let index = 1;
-//   questions.forEach((node, text) => {
-//     const li = document.createElement("li");
-//     li.style.display = "flex";
-//     li.style.alignItems = "center";
-//     li.style.justifyContent = "space-between";
-//     li.style.marginBottom = "4px";
-
-//     // 文本链接
-//     const a = document.createElement("a");
-//     a.href = "#";
-//     a.textContent = `${index++}. ${text.slice(0, 50)}`;
-//     a.setAttribute("draggable", "false");
-//     Object.assign(a.style, {
-//       flex: "1",
-//       padding: "6px 10px",
-//       borderRadius: "6px",
-//       color: "#1a73e8",
-//       textDecoration: "none",
-//       fontSize: "13px",
-//       lineHeight: "1.4",
-//       overflow: "hidden",
-//       whiteSpace: "nowrap",
-//       textOverflow: "ellipsis",
-//     });
-//     a.addEventListener("click", (e) => {
-//       e.preventDefault();
-//       node.scrollIntoView({ behavior: "smooth", block: "start" });
-//     });
-
-//     // 编辑按钮
-//     const editBtn = document.createElement("button");
-//     editBtn.textContent = "✏️";
-//     Object.assign(editBtn.style, {
-//       marginLeft: "4px",
-//       cursor: "pointer",
-//       border: "none",
-//       background: "transparent",
-//     });
-//     editBtn.addEventListener("click", () => {
-//       const newText = prompt("编辑标题：", text);
-//       if (newText && newText.trim()) {
-//         questions.delete(text); // 删除旧 key
-//         questions.set(newText.trim(), node); // 设置新 key
-//         updateTOC();
-//       }
-//     });
-
-//     // 删除按钮
-//     const deleteBtn = document.createElement("button");
-//     deleteBtn.textContent = "❌";
-//     Object.assign(deleteBtn.style, {
-//       marginLeft: "4px",
-//       cursor: "pointer",
-//       border: "none",
-//       background: "transparent",
-//     });
-//     deleteBtn.addEventListener("click", () => {
-//       questions.delete(text);
-//       updateTOC();
-//     });
-
-//     // 组合按钮容器
-//     const btnContainer = document.createElement("div");
-//     btnContainer.appendChild(editBtn);
-//     btnContainer.appendChild(deleteBtn);
-
-//     // 插入元素
-//     li.appendChild(a);
-//     li.appendChild(btnContainer);
-//     ul.appendChild(li);
-//   });
-// }
-
-// ✅ 正确设置全局 observer
-// function setupMutationObserver() {
-//   observer?.disconnect(); // 防止重复监听
-//   observer = new MutationObserver(() => {
-//     const chatItems = document.querySelectorAll(".text-base:not([data-toc])");
-//     chatItems.forEach((el) => {
-//       const text = el.innerText.trim();
-//       const parent = el.closest('[data-testid*="conversation-turn"]');
-//       if (
-//         parent?.querySelector(".whitespace-pre-wrap") &&
-//         parent?.querySelector(".items-end")
-//       ) {
-//         if (!questions.has(text)) {
-//           questions.set(text, el);
-//           el.setAttribute("data-toc", "1");
-//           updateTOC();
-//         }
-//       }
-//     });
-//   });
-//   observer.observe(document.body, { childList: true, subtree: true });
-// }
-
-// function monitorChatSwitch() {
-//   let lastPath = location.pathname;
-
-//   function startMonitor() {
-//     intervalId = setInterval(() => {
-//       if (location.pathname !== lastPath) {
-//         clearInterval(intervalId); // 先清掉当前这个 interval，避免重复
-//         lastPath = location.pathname;
-//         cleanup();
-//         setTimeout(() => {
-//           setupMutationObserver();
-//           startMonitor(); // ✅ 重新启动监听
-//         }, 300);
-//       }
-//     }, 1000);
-//   }
-
-//   startMonitor(); // 初次调用
-// }
 
 function cleanup() {
   observer?.disconnect();
@@ -716,39 +605,9 @@ function injectReopenButton() {
   document.body.appendChild(btn);
 }
 
-// function safeInitByToggle() {
-//   chrome.storage.sync.get(["pluginEnabled"], (res) => {
-//     if (res.pluginEnabled) {
-//       init();
-//     } else {
-//       console.log("[ChatGPT TOC] 插件未启用，未执行 init()");
-//     }
-//   });
-// }
-
 // 入口改成带开关判断
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
 }
-
-// chrome.runtime.onMessage.addListener((msg) => {
-//   if (msg.action === "togglePlugin") {
-//     if (msg.value === true) {
-//       // ✅ 启用插件逻辑（等价于点击恢复按钮）
-//       if (typeof window.reopenTOCPanel === "function") {
-//         window.reopenTOCPanel();
-//       } else {
-//         safeInitByToggle(); // 确保没有重复创建
-//       }
-//     } else {
-//       // ✅ 关闭插件逻辑（等价于点击红色关闭按钮）
-//       isManuallyClosed = true;
-//       cleanup();
-//       const panel = document.getElementById("chatgpt-toc-panel");
-//       if (panel) panel.style.display = "none";
-//       injectReopenButton();
-//     }
-//   }
-// });
