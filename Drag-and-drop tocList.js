@@ -152,6 +152,7 @@ class DragInsertManager {
       const startEl = this.draggedRange.startContainer.parentElement;
       const anchorEl = startEl?.closest("[data-start]");
       draggedMessageId = anchorEl?.getAttribute("data-start") || null;
+      console.log(draggedMessageId);
     }
   }
 

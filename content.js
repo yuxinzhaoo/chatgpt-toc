@@ -4,9 +4,20 @@
 // ==/UserScript==
 let panel;
 const questions = new Map();
+const deletedTexts = new Set();
 let observer;
 let intervalId;
 const STORAGE_KEY = "chatgpt_toc_note";
+const TITLE_ALIAS_KEY = "chatgpt_toc_title_alias";
+
+function loadTitleAliases() {
+  const raw = localStorage.getItem(TITLE_ALIAS_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+function saveTitleAliases(aliases) {
+  localStorage.setItem(TITLE_ALIAS_KEY, JSON.stringify(aliases));
+}
 
 function createTOCPanel() {
   if (document.getElementById("chatgpt-toc-panel")) return;
@@ -457,34 +468,22 @@ function updateTOC() {
   const ul = panel.querySelector("#toc-list");
   if (!ul) return;
 
-  ul.style.scrollbarWidth = "thin";
-  ul.style.msOverflowStyle = "none";
-  ul.style.overflowY = "auto";
-
-  const styleId = "custom-scroll-style";
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.innerHTML = `
-      #toc-list::-webkit-scrollbar { width: 6px; }
-      #toc-list::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 4px; }
-    `;
-    document.head.appendChild(style);
-  }
-
   ul.innerHTML = "";
+  const aliases = loadTitleAliases(); // ✅ 加载自定义标题映射
+
   let index = 1;
   questions.forEach((node, text) => {
+    const displayText = aliases[text] || text;
+
     const li = document.createElement("li");
     li.style.display = "flex";
     li.style.alignItems = "center";
     li.style.justifyContent = "space-between";
     li.style.marginBottom = "4px";
 
-    // 文本链接
     const a = document.createElement("a");
     a.href = "#";
-    a.textContent = `${index++}. ${text.slice(0, 50)}`;
+    a.textContent = `${index++}. ${displayText.slice(0, 50)}`;
     a.setAttribute("draggable", "false");
     Object.assign(a.style, {
       flex: "1",
@@ -503,7 +502,6 @@ function updateTOC() {
       node.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
-    // 编辑按钮
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️";
     Object.assign(editBtn.style, {
@@ -513,15 +511,15 @@ function updateTOC() {
       background: "transparent",
     });
     editBtn.addEventListener("click", () => {
-      const newText = prompt("编辑标题：", text);
-      if (newText && newText.trim()) {
-        questions.delete(text); // 删除旧 key
-        questions.set(newText.trim(), node); // 设置新 key
-        updateTOC();
+      const newText = prompt("编辑标题：", displayText);
+      if (newText && newText.trim() && newText.trim() !== displayText) {
+        const aliasMap = loadTitleAliases();
+        aliasMap[text] = newText.trim();
+        saveTitleAliases(aliasMap);
+        updateTOC(); // ✅ 重绘 UI，别名已更新
       }
     });
 
-    // 删除按钮
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     Object.assign(deleteBtn.style, {
@@ -531,16 +529,20 @@ function updateTOC() {
       background: "transparent",
     });
     deleteBtn.addEventListener("click", () => {
+      // 直接使用 node（不再通过 text 取回）
+      // node.setAttribute("data-toc", "removed");
+      const aliasMap = loadTitleAliases();
+      delete aliasMap[text];
+      saveTitleAliases(aliasMap);
+
+      deletedTexts.add(text);
       questions.delete(text);
       updateTOC();
     });
-
-    // 组合按钮容器
     const btnContainer = document.createElement("div");
     btnContainer.appendChild(editBtn);
     btnContainer.appendChild(deleteBtn);
 
-    // 插入元素
     li.appendChild(a);
     li.appendChild(btnContainer);
     ul.appendChild(li);
@@ -555,11 +557,13 @@ function setupMutationObserver() {
     chatItems.forEach((el) => {
       const text = el.innerText.trim();
       const parent = el.closest('[data-testid*="conversation-turn"]');
+      console.log("parent:", parent);
+
       if (
         parent?.querySelector(".whitespace-pre-wrap") &&
         parent?.querySelector(".items-end")
       ) {
-        if (!questions.has(text)) {
+        if (!deletedTexts.has(text) && !questions.has(text)) {
           questions.set(text, el);
           el.setAttribute("data-toc", "1");
           updateTOC();
