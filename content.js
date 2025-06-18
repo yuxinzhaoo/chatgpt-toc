@@ -9,6 +9,19 @@ let observer;
 let intervalId;
 const STORAGE_KEY = "chatgpt_toc_note";
 const TITLE_ALIAS_KEY = "chatgpt_toc_title_alias";
+const PINNED_KEY = "chatgpt_toc_pinned";
+
+// ----------- pinned --------------------
+function loadPinnedItems() {
+  const raw = localStorage.getItem(PINNED_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function savePinnedItems(pinnedList) {
+  localStorage.setItem(PINNED_KEY, JSON.stringify(pinnedList));
+}
+
+// ----------- pinned --------------------
 
 function loadTitleAliases() {
   const raw = localStorage.getItem(TITLE_ALIAS_KEY);
@@ -470,10 +483,21 @@ function updateTOC() {
 
   ul.innerHTML = "";
   const aliases = loadTitleAliases(); // ✅ 加载自定义标题映射
+  const pinnedItems = loadPinnedItems();
+
+  const entries = [...questions.entries()];
+
+  // 💡 优先显示 pinned 项
+  entries.sort(([textA], [textB]) => {
+    const aPinned = pinnedItems.includes(textA);
+    const bPinned = pinnedItems.includes(textB);
+    return bPinned - aPinned; // pinned 在上
+  });
 
   let index = 1;
-  questions.forEach((node, text) => {
+  entries.forEach(([text, node]) => {
     const displayText = aliases[text] || text;
+    const isPinned = pinnedItems.includes(text);
 
     const li = document.createElement("li");
     li.style.display = "flex";
@@ -489,7 +513,8 @@ function updateTOC() {
       flex: "1",
       padding: "6px 10px",
       borderRadius: "6px",
-      color: "#1a73e8",
+      color: isPinned ? "#d23f31" : "#1a73e8",
+      fontWeight: isPinned ? "bold" : "normal",
       textDecoration: "none",
       fontSize: "13px",
       lineHeight: "1.4",
@@ -502,6 +527,29 @@ function updateTOC() {
       node.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
+    // 📌 Pin 按钮
+    const pinBtn = document.createElement("button");
+    pinBtn.textContent = isPinned ? "📌" : "📍";
+    pinBtn.title = isPinned ? "取消 Pin" : "Pin 此项";
+    Object.assign(pinBtn.style, {
+      marginLeft: "4px",
+      cursor: "pointer",
+      border: "none",
+      background: "transparent",
+    });
+    pinBtn.addEventListener("click", () => {
+      const pinned = loadPinnedItems();
+      const index = pinned.indexOf(text);
+      if (index >= 0) {
+        pinned.splice(index, 1); // remove
+      } else {
+        pinned.push(text);
+      }
+      savePinnedItems(pinned);
+      updateTOC(); // 重绘
+    });
+
+    // ✏️ 编辑按钮
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️";
     Object.assign(editBtn.style, {
@@ -534,12 +582,22 @@ function updateTOC() {
       const aliasMap = loadTitleAliases();
       delete aliasMap[text];
       saveTitleAliases(aliasMap);
-
       deletedTexts.add(text);
       questions.delete(text);
+
+      // 同时清除 pin 状态
+      const pinned = loadPinnedItems();
+      const index = pinned.indexOf(text);
+      if (index >= 0) {
+        pinned.splice(index, 1);
+        savePinnedItems(pinned);
+      }
+
       updateTOC();
     });
+
     const btnContainer = document.createElement("div");
+    btnContainer.appendChild(pinBtn);
     btnContainer.appendChild(editBtn);
     btnContainer.appendChild(deleteBtn);
 
