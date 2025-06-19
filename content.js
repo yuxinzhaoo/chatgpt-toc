@@ -532,7 +532,11 @@ function updateTOC() {
     pinBtn.textContent = isPinned ? "📌" : "📍";
     pinBtn.title = isPinned ? "取消 Pin" : "Pin 此项";
     Object.assign(pinBtn.style, {
-      marginLeft: "4px",
+      marginLeft: "2px",
+      width: "18px", // ✅ 设置固定宽度
+      height: "18px",
+      fontSize: "12px", // ✅ 更小字体
+      padding: "0", // ✅ 去除内边距
       cursor: "pointer",
       border: "none",
       background: "transparent",
@@ -553,7 +557,11 @@ function updateTOC() {
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️";
     Object.assign(editBtn.style, {
-      marginLeft: "4px",
+      marginLeft: "2px",
+      width: "18px",
+      height: "18px",
+      fontSize: "12px",
+      padding: "0",
       cursor: "pointer",
       border: "none",
       background: "transparent",
@@ -571,7 +579,11 @@ function updateTOC() {
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     Object.assign(deleteBtn.style, {
-      marginLeft: "4px",
+      marginLeft: "2px",
+      width: "18px",
+      height: "18px",
+      fontSize: "12px",
+      padding: "0",
       cursor: "pointer",
       border: "none",
       background: "transparent",
